@@ -11,10 +11,18 @@
 #!/usr/bin/python
 LocalPath = r'/home/pi/Script'
 from sys import path
-if  not in path:
+if LocalPath not in path:
     path.append(LocalPath)
-    
+
+# For debug usage
+from time import sleep, clock, time
+import pdb
+
 ''' This will be used to test our IR sensor'''
+
+#Local var's
+RowLen=56
+RowSpace=2
 
 try:
     import GPIOWrapperClass as GPIO
@@ -32,15 +40,49 @@ if __name__=='__main__':
     print '*'*RowLen
     print '\n'*RowSpace
 
+    tick=0
+    tock=0
+    Counter=0
     
+    def cbRedButtonPress(Ch):
+        print 'Red Button got pressed'
+        global tick
+        global tock
+        global Counter
+        print 'Clear time counter'        
+        tick=0
+        tock=0
+        Counter=0
+        
+    def cbYellowButtonPress(Ch):
+        print 'Yellow Button got pressed'
+
+    def cbIRToggle(Ch):
+        global tick
+        global tock
+        global Counter
+        tock = time()
+##        tock = clock()                
+        Counter+=1
+        print 'IR toogle #%d, time Diff=%f' %(Counter,tock-tick)
+        tick = tock
+        
     pin_mode='BOARD'
     warning_level=False
     WireBoardWrp = ExtenBoard.clsWiringExtenstionBoard()
     global GPIOWrp
     GPIOWrp = GPIO.clsGPIOWrapper(pin_mode, warning_level)
-    pin = eval('WireBoardWrp.PortMapDict[\'P7\']')
-    GPIOWrp.GPIOSetUp(pin, 'in', None, None)
+    RedButt = eval('WireBoardWrp.PortMapDict[\'P7\']')
+    YellowButt = eval('WireBoardWrp.PortMapDict[\'P6\']')
+    GPIOWrp.GPIOSetUp(RedButt, 'in', None, None)
+    GPIOWrp.GPIOSetUp(YellowButt, 'in', None, None)
+    GPIOWrp.AddEvent('RedButt', RedButt, GPIOWrp.RISING, cbRedButtonPress, 200)
+    GPIOWrp.AddEvent('YellowButt', YellowButt, GPIOWrp.RISING, cbYellowButtonPress, 200)
 
+    IRRx = eval('WireBoardWrp.PortMapDict[\'P5\']')
+    GPIOWrp.GPIOSetUp(IRRx, 'in', 'down', 'low')
+    GPIOWrp.AddEvent('IRRx', IRRx, GPIOWrp.BOTH, cbIRToggle, None)
+    
     while(True):
         Menu = raw_input('Press Enter for \'NOP\', \'q\' to quit >>> Input: ')
         if Menu.lower() in ['q', 'quit']:
