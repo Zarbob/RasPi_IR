@@ -58,13 +58,25 @@ if __name__=='__main__':
         print 'Yellow Button got pressed'
 
     def cbIRToggle(Ch):
+        #http://www.sbprojects.com/knowledge/ir/nec.php
         global tick
         global tock
         global Counter
         tock = time()
 ##        tock = clock()                
         Counter+=1
-        print 'IR toogle #%d, time Diff=%f' %(Counter,tock-tick)
+        Diff = (tock-tick)*1e3
+        if Diff>30:
+            Val='End'
+        elif Diff>7:
+            Val ='AGC'
+        elif Diff>3.5:
+            Val='Space'
+        elif Diff>1 and Diff<2:
+            Val=1
+        else:
+            Val=-9999
+        print 'IR toogle #%d, time Diff=%f [mSec], Bit=%d' %(Counter, Diff, Val)
         tick = tock
         
     pin_mode='BOARD'
@@ -82,6 +94,10 @@ if __name__=='__main__':
     IRRx = eval('WireBoardWrp.PortMapDict[\'P5\']')
     GPIOWrp.GPIOSetUp(IRRx, 'in', 'down', 'low')
     GPIOWrp.AddEvent('IRRx', IRRx, GPIOWrp.BOTH, cbIRToggle, None)
+
+    t1=time()
+    t2=time()
+    print 'Quick time check, t1=%f, t2=%f, time diff %f[uSec]' %(t1, t2, (t2-t1)*10e6)
     
     while(True):
         Menu = raw_input('Press Enter for \'NOP\', \'q\' to quit >>> Input: ')
